@@ -1,52 +1,30 @@
-# 🏗️ AWS Infrastructure as Code (Terraform)
+# AWS Infrastructure as Code (Terraform)
 
-This repository contains the complete Terraform configuration to provision a secure, three-tier cloud environment on AWS. It uses **Remote State Management** to ensure infrastructure consistency and prevent state file conflicts.
+This is the secure bedrock for our CI/CD + Node.js deployment. Creates an isolated, production-grade environment with proper networking, state management, and scalability baked in from day one.
 
-## 🌟 Key Features
+## Why This Design
+**Security First**: Custom VPC keeps everything private except essential ports. S3 remote state prevents drift and enables team collaboration.  
+**Scalable**: ALB + ECR ready for growth. Subnets positioned for future private deployments.  
+**Zero Friction**: Outputs feed directly into Jenkins/Ansible—no manual hunting.
 
-* **Remote Backend**: State management via AWS S3 (`s3backendforupgrad`) for state locking and durability.
-* **Custom Networking**: VPC with public subnets, Internet Gateway, and optimized routing tables.
-* **Security-First Approach**: Granular Security Groups for Jenkins (8080), Node.js (8081), and SSH (22).
-* **Load Balancing**: Application Load Balancer (ALB) to manage and distribute incoming application traffic.
-* **Private Registry**: Amazon ECR setup for secure and private Docker image storage.
+## What Gets Created
+- **VPC + Networking**: Public subnets + IGW for Jenkins/app access  
+- **State Backend**: s3backendforupgrad bucket (handles locking/versioning)  
+- **EC2 Instances**: Jenkins master + Docker app host (ubuntu/upgrad-key)  
+- **Security Groups**: SSH(22), Jenkins(8080), App(8081)—nothing else  
+- **ECR Repo**: Private registry for our Node.js Docker images  
+- **ALB**: Single DNS entry point w/ target group on 8081  
 
-## 📂 File Structure
+## File Breakdown
+provider.tf - Connects Terraform to AWS and sets up the S3 backend  
+vpc.tf + sec_grp.tf - Network isolation + firewall rules  
+instances.tf - Server provisioning  
+ecr.tf & iam_ecr.tf: Sets up the private registry and the IAM instance profiles that allow our servers to securely push/pull Docker images without needing hardcoded AWS keys
+alb.tf - Traffic distribution  
 
-* `provider.tf`: Configures AWS provider and the S3 Remote Backend.
-* `vpc.tf`: Defines the network isolation and connectivity layer.
-* `sec_grp.tf`: Implements firewall rules for the "Least Privilege" security model.
-* `instances.tf`: Provisions the Jenkins Bastion host and the Application Host.
-* `ecr.tf` & `iam_ecr.tf`: Sets up the private container registry and required IAM permissions.
-* `alb.tf`: Configures the Load Balancer for high availability.
-
-## 🚀 Deployment Guide
-
-1. **Initialize the Backend**:
-Download providers and sync with the S3 state bucket.
+## Deploy Sequence
 ```bash
-terraform init
-
+terraform init    # Hooks up S3 backend
+terraform plan    # Dry run preview
+terraform apply   # Live deployment
 ```
-
-2. **Review Execution Plan**:
-Verify syntax and preview exactly what AWS will create.
-```bash
-terraform plan
-
-```
-
-3. **Provision Infrastructure**:
-Deploy the resources to the us-east-1 region.
-```bash
-terraform apply -auto-approve
-
-```
-
-## 📊 Outputs & Connectivity
-
-Once deployed, the following resources are available:
-
-* **Jenkins Server**: Accessible via Public IP on port 8080.
-* **Application Host**: Private node accessible via Jenkins Agent/SSH.
-* **ECR URI**: The endpoint used for pushing Docker images in the CI/CD pipeline.
-
