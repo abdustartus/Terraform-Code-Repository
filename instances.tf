@@ -27,8 +27,6 @@ resource "aws_instance" "public_ec2" {
   vpc_security_group_ids       = [aws_security_group.public_sg.id]
   key_name                     = aws_key_pair.upgrad_key.key_name
   associate_public_ip_address = true
-  user_data                   = local.user_data
-
   tags = {
     Name = "upgrad-public-ec2"
   }
@@ -58,7 +56,6 @@ resource "aws_instance" "private2_ec2" {
   subnet_id              = aws_subnet.private2.id
   vpc_security_group_ids = [aws_security_group.private_sg.id]
   key_name               = aws_key_pair.upgrad_key.key_name
-  user_data              = local.user_data
   
   # Added for ECR Access (Sub-task 4)
   iam_instance_profile   = aws_iam_instance_profile.ec2_ecr_profile.name
